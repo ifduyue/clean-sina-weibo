@@ -1,0 +1,4 @@
+批量删除新浪微博/取消关注/移除粉丝
+
+usage:
+python clean_sina_weibo.py weibo_username weibo_password
