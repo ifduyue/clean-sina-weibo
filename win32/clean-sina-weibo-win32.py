@@ -181,7 +181,6 @@ class CleanSinaWeiboGUI(gtk.Window):
             return
         
         self.buffer.set_text(u"")
-        self.running = True
         
         username = self.entry_username.get_text()
         password = self.entry_password.get_text()
@@ -194,7 +193,6 @@ class CleanSinaWeiboGUI(gtk.Window):
             dialog.show_all()
             dialog.run()
             dialog.destroy()
-            self.running = False
             return
         
         del_tweets = self.checkbutton_del_tweets.get_active()
@@ -209,52 +207,56 @@ class CleanSinaWeiboGUI(gtk.Window):
             dialog.show_all()
             dialog.run()
             dialog.destroy()
-            self.running = False
             return
         
         def job():
-            
+             
             def append_info(text):
                 iter = self.buffer.get_end_iter()
                 self.buffer.insert(iter, "\n"+text)
                 
-            
+            self.running = True 
             sina = Sina(username, password)
             append_info(u"登录中...")
             yield True
-            sina.login()
+            try:
+                sina.login()
             
-            if del_tweets:
-                append_info(u"开始删除微博...")
-                for url in sina.del_tweets():
-                    append_info(u"%s" % url)
+                if del_tweets:
+                    append_info(u"开始删除微博...")
+                    for url in sina.del_tweets():
+                        append_info(u"%s" % url)
+                        yield True
+                    append_info(u"\n")
                     yield True
-                append_info(u"\n")
-                yield True
-            
-            if unfollow:
-                append_info(u"开始删除关注...")
-                for url in sina.unfollow():
-                    append_info(u"%s" % url)
-                    yield True
-                append_info(u"\n")
-                yield True
                 
-            if unfollow:
-                append_info(u"开始删除粉丝...")
-                for url in sina.remove_followers():
-                    append_info(u"%s" % url)
+                if unfollow:
+                    append_info(u"开始删除关注...")
+                    for url in sina.unfollow():
+                        append_info(u"%s" % url)
+                        yield True
+                    append_info(u"\n")
                     yield True
-                append_info(u"\n")
+                    
+                if unfollow:
+                    append_info(u"开始删除粉丝...")
+                    for url in sina.remove_followers():
+                        append_info(u"%s" % url)
+                        yield True
+                    append_info(u"\n")
+                    yield True
+                    
+                append_info(u"完成.")
+            except Exception, e:
+                append_info(u"[Error] %s" % str(e))
                 yield True
-                
-            append_info(u"完成.")
-            yield False
+            finally:
+                self.running = False
+                yield False
         
         # see http://faq.pygtk.org/index.py?req=show&file=faq23.020.htp
         task = job()
         gobject.idle_add(task.next)
-        self.running = False
         
         
     def toggle_button_active_cb(self, entry):
