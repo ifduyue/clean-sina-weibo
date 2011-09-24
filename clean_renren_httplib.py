@@ -62,15 +62,12 @@ class Renren(object):
                 break
             for url, id, sid in data:
                 url = url.replace('&amp;', '&')
-                response = fetch(
-                    url,
-                    headers = {
-                        'Cookie': self.cookies
-                    }
-                )
-                data = response.body
-                action = re.search(r'''action="([^"]+)"''', data).group(1)
-                sid = re.search(r'''sid=([^";&]+)''', data).group(1)
+                a, b = url.split('?', 1)
+                qs = dict(parse_qsl(b))
+                del qs['curpage']
+                del qs['sid']
+                action = a + '?' + '&'.join(['='.join(k) for k in qs.items()])
+                
                 try:
                     fetch(
                         action,
@@ -84,7 +81,7 @@ class Renren(object):
                             'referer': url
                         }
                     )
-                    print action
+                    print id
                 except:pass
                 
 if __name__ == '__main__':
