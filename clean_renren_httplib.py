@@ -50,29 +50,41 @@ class Renren(object):
                     print i
                 except:pass
                 
-    def unfollow(self):
+    def del_statuses(self):
         while True:
             response = fetch(
-                'http://weibo.cn/dpool/ttt/attention.php?cat=0',
+                'http://3g.renren.com/status/getdoing.do',
                 headers={'Cookie': self.cookies}
             )
             
-            data = re.findall(r'href="attnDeal\.php\?([^"]+?act=del[^"]+)"', response.body)
+            data = re.findall(r'''href="([^"]*?wdelstatus.do[^"]*?id=(\d+)[^"]*?sid=([^&;]+)[^"]*?)"''', response.body)
             if not data:
                 break
-            for i in data:
-                j = parse_qsl(i)
-                qs = dict(j)
-                qs['act'] = 'delc'
-                qs = '&'.join(['='.join(k) for k in qs.items()])
-                url = 'http://weibo.cn/dpool/ttt/attnDeal.php?' + qs
-                
+            for url, id, sid in data:
+                url = url.replace('&amp;', '&')
+                response = fetch(
+                    url,
+                    headers = {
+                        'Cookie': self.cookies
+                    }
+                )
+                data = response.body
+                action = re.search(r'''action="([^"]+)"''', data).group(1)
+                sid = re.search(r'''sid=([^";&]+)''', data).group(1)
                 try:
                     fetch(
-                        url,
-                        headers = {'Cookie': self.cookies}
+                        action,
+                        data = {
+                            'sid': sid,
+                            'referer': url,
+                            'cr': 0
+                        },
+                        headers = {
+                            'Cookie': self.cookies,
+                            'referer': url
+                        }
                     )
-                    print url
+                    print action
                 except:pass
                 
 if __name__ == '__main__':
@@ -90,3 +102,4 @@ if __name__ == '__main__':
     renren = Renren(username, password)
     renren.login()
     renren.del_minifeed()
+    renren.del_statuses()
