@@ -141,6 +141,7 @@ class CleanSinaWeiboGUI(gtk.Window):
         
         self.label_password = gtk.Label(u"密码")
         self.entry_password = gtk.Entry()
+        self.entry_password.set_visibility(False)
         self.entry_password.connect("changed", self.toggle_button_active_cb)
         self.hbox_password = gtk.HBox()
         self.hbox_password.pack_start(self.label_password, False)
