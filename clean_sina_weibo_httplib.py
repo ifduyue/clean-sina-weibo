@@ -119,6 +119,7 @@ if __name__ == '__main__':
             sys.exit()
         import signal
         signal.signal(signal.SIGINT, _sigint)
+    import sys
     sigint()
     username, password = sys.argv[1:]
     sina = Sina(username, password)
