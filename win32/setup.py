@@ -5,7 +5,7 @@ import py2exe
 setup(
     name = u'新浪微博清理器',
     description = u'lyxint.com',
-    version = "20110922",
+    version = "20120223",
 
     windows = [
                   {
