@@ -32,25 +32,31 @@ class Sina(object):
         
         set_cookie = response.msg.getheaders('set-cookie')
         self.cookies = setcookielist2cookiestring(set_cookie)
+        
+        response = fetch(
+            'http://weibo.cn/',
+            headers = {'Cookie': self.cookies},
+        )
+        self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
         return self.cookies
     
     
     def del_tweets(self):
         while True:
             response = fetch(
-                'http://weibo.cn/dpool/ttt/home.php?cat=1',
+                'http://weibo.cn/',
                 headers={'Cookie': self.cookies}
             )
             
-            data = re.findall(r'href="mblogDeal\.php\?([^"]+?act=del[^"]+)"', response.body)
+            data = re.findall(r'href="/mblog/del\?(.*?)"', response.body)
             if not data:
                 break
             for i in data:
                 j = parse_qsl(i)
                 qs = dict(j)
-                qs['act'] = 'dodel'
+                qs['act'] = 'delc'
                 qs = '&'.join(['='.join(k) for k in qs.items()])
-                url = 'http://weibo.cn/dpool/ttt/mblogDeal.php?' + qs
+                url = 'http://weibo.cn/mblog/del?' + qs
                 
                 try:
                     fetch(
@@ -63,11 +69,11 @@ class Sina(object):
     def unfollow(self):
         while True:
             response = fetch(
-                'http://weibo.cn/dpool/ttt/attention.php?cat=0',
+                'http://weibo.cn/%s/follow' % self.uid,
                 headers={'Cookie': self.cookies}
             )
             
-            data = re.findall(r'href="attnDeal\.php\?([^"]+?act=del[^"]+)"', response.body)
+            data = re.findall(r'href="/attention/del\?(.*?)"', response.body)
             if not data:
                 break
             for i in data:
@@ -75,7 +81,7 @@ class Sina(object):
                 qs = dict(j)
                 qs['act'] = 'delc'
                 qs = '&'.join(['='.join(k) for k in qs.items()])
-                url = 'http://weibo.cn/dpool/ttt/attnDeal.php?' + qs
+                url = 'http://weibo.cn/attention/del?' + qs
                 
                 try:
                     fetch(
@@ -88,19 +94,21 @@ class Sina(object):
     def remove_followers(self, black=False):
         while True:
             response = fetch(
-                'http://weibo.cn/dpool/ttt/attention.php?cat=1',
+                'http://weibo.cn/%s/fans' % self.uid,
                 headers={'Cookie': self.cookies}
             )
             
-            data = re.findall(r'href="attnDeal\.php\?([^"]+?act=remove[^"]+)"', response.body)
+            data = re.findall(r'href="/attention/remove\?(.*?)"', response.body)
             if not data:
                 break
             for i in data:
                 j = parse_qsl(i)
                 qs = dict(j)
                 qs['act'] = 'removec'
+                if black:
+                    qs['black'] = 1
                 qs = '&'.join(['='.join(k) for k in qs.items()])
-                url = 'http://weibo.cn/dpool/ttt/attnDeal.php?' + qs
+                url = 'http://weibo.cn/attention/remove?' + qs
                 
                 try:
                     fetch(
@@ -125,5 +133,5 @@ if __name__ == '__main__':
     sina = Sina(username, password)
     sina.login()
     sina.del_tweets()
-    #sina.unfollow()
-    #sina.remove_followers()
+    sina.unfollow()
+    sina.remove_followers()
