@@ -12,8 +12,7 @@ class Sina(object):
         self.password = password
     
     def login(self):
-        
-        response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php')
+        response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php', headers={'User-Agent': 'android'})
         data = response.body
         vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
         pname = re.search(r'''name="password_(\d+)"''', data).group(1)
@@ -21,21 +20,45 @@ class Sina(object):
         post = {
             'mobile': self.username,
             'password_'+pname: self.password,
+            #'capId': capid,
             'vk': vk,
             'remember': 'on',
             'submit': '1'
         }
         response = fetch(
             'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
-            data = post
+            data = post,
+            headers = {'User-Agent': 'android'},
         )
-        
+        data = response.body
+        captcha = re.search(r'''captcha/show.php\?cpt=(\w+)''', data)
+        if captcha:
+            url = '''http://weibo.cn/interface/f/ttt/captcha/show.php?cpt=''' + captcha.group(1)
+            print url
+            captcha = raw_input("open the url and input the captcha:")
+            vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
+            pname = re.search(r'''name="password_(\d+)"''', data).group(1)
+            capid = re.search(r'''name="capId"\s+?value="(.*?)"''', data).group(1)
+            post = {
+                'mobile': self.username,
+                'password_'+pname: self.password,
+                'capId': capid,
+                'vk': vk,
+                'remember': 'on',
+                'submit': '1',
+                'code': captcha.strip(),
+            }
+            response = fetch(
+                'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
+                data = post,
+                headers = {'User-Agent': 'android'},
+            )
         set_cookie = response.msg.getheaders('set-cookie')
         self.cookies = setcookielist2cookiestring(set_cookie)
-        
+        print self.cookies
         response = fetch(
             'http://weibo.cn/',
-            headers = {'Cookie': self.cookies},
+            headers = {'Cookie': self.cookies, 'User-Agent': 'android'},
         )
         self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
         return self.cookies
@@ -44,10 +67,9 @@ class Sina(object):
     def del_tweets(self):
         while True:
             response = fetch(
-                'http://weibo.cn/',
+                'http://weibo.cn/%s/profile' % self.uid,
                 headers={'Cookie': self.cookies}
             )
-            
             data = re.findall(r'href="/mblog/del\?(.*?)"', response.body)
             if not data:
                 break
@@ -57,7 +79,6 @@ class Sina(object):
                 qs['act'] = 'delc'
                 qs = '&'.join(['='.join(k) for k in qs.items()])
                 url = 'http://weibo.cn/mblog/del?' + qs
-                
                 try:
                     fetch(
                         url,
@@ -82,7 +103,6 @@ class Sina(object):
                 qs['act'] = 'delc'
                 qs = '&'.join(['='.join(k) for k in qs.items()])
                 url = 'http://weibo.cn/attention/del?' + qs
-                
                 try:
                     fetch(
                         url,
@@ -109,7 +129,6 @@ class Sina(object):
                     qs['black'] = 1
                 qs = '&'.join(['='.join(k) for k in qs.items()])
                 url = 'http://weibo.cn/attention/remove?' + qs
-                
                 try:
                     fetch(
                         url,
@@ -133,5 +152,5 @@ if __name__ == '__main__':
     sina = Sina(username, password)
     sina.login()
     sina.del_tweets()
-    sina.unfollow()
-    sina.remove_followers()
+    #sina.unfollow()
+    #sina.remove_followers()
