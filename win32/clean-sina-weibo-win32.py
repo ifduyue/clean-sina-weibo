@@ -53,7 +53,7 @@ class Sina(object):
     def del_tweets(self):
         while True:
             response = fetch(
-                'http://weibo.cn/',
+                'http://weibo.cn/%s/profile' % self.uid,
                 headers={'Cookie': self.cookies}
             )
             
