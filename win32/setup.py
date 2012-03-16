@@ -5,7 +5,7 @@ import py2exe
 setup(
     name = u'新浪微博清理器',
     description = u'lyxint.com',
-    version = "20120223",
+    version = u"20120223",
 
     windows = [
                   {
@@ -17,12 +17,8 @@ setup(
     options = {
                   'py2exe': {
                       'packages':'encodings',
-                      'includes': 'cairo, pango, pangocairo, gobject, atk, gtk, pygtk, gio, re, sys, os',
+                      'includes': 'cairo,pango,gio,pangocairo,atk',
                       'excludes': 'sets',
                   }
               },
-    
-    #data_files = [
-    #    'QQWry.Dat'
-    #],
 )
