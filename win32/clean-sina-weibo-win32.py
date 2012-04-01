@@ -20,34 +20,68 @@ class Sina(object):
         self.username = username
         self.password = password
     
-    def login(self):
+    def login(self, post=None):
         
         response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php')
         data = response.body
         vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
         pname = re.search(r'''name="password_(\d+)"''', data).group(1)
         
-        post = {
-            'mobile': self.username,
-            'password_'+pname: self.password,
-            'vk': vk,
-            'remember': 'on',
-            'submit': '1'
-        }
+        
+        
+        open('test.html', 'wb').write(data)
+        if post is None:
+            post = {
+                'mobile': self.username,
+                'password_'+pname: self.password,
+                'vk': vk,
+                'remember': 'on',
+                'submit': '1'
+            }
+        
+        
         response = fetch(
             'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
             data = post
         )
         
+        data = response.body
+        captcha = re.search(r'''captcha/show.php\?cpt=(\w+)''', data)
+        if captcha:
+            url = '''http://weibo.cn/interface/f/ttt/captcha/show.php?cpt=''' + captcha.group(1)
+            vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
+            pname = re.search(r'''name="password_(\d+)"''', data).group(1)
+            capid = re.search(r'''name="capId"\s+?value="(.*?)"''', data).group(1)
+            post = {
+                'mobile': self.username,
+                'password_'+pname: self.password,
+                'capId': capid,
+                'vk': vk,
+                'remember': 'on',
+                'submit': '1',
+            }
+            return {
+                'code': 1,
+                'msg': 'captcha required',
+                'url': url,
+                'post': post,
+            }
+        
         set_cookie = response.msg.getheaders('set-cookie')
         self.cookies = setcookielist2cookiestring(set_cookie)
+        
         
         response = fetch(
             'http://weibo.cn/',
             headers = {'Cookie': self.cookies},
         )
         self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
-        return self.cookies
+        return {
+            'code': 0,
+            'msg': 'OK',
+            'cookies': self.cookies,
+            'uid': self.uid,
+        }
     
     
     def del_tweets(self):
@@ -180,7 +214,7 @@ class CleanSinaWeiboGUI(gtk.Window):
         # setup textview auto-scrolling
         itr = self.buffer.get_end_iter()
         self.buffer.create_mark("bottom", itr, False)
-        gobject.timeout_add(200, self.auto_scrolling_cb)
+        gobject.timeout_add(500, self.auto_scrolling_cb)
         
         self.vbox.pack_start(self.hbox_username, False, False, 5)
         self.vbox.pack_start(self.hbox_password, False, False, 5)
@@ -235,8 +269,39 @@ class CleanSinaWeiboGUI(gtk.Window):
             append_info(u"登录中...")
             yield True
             try:
-                sina.login()
-            
+                ret = sina.login()
+                while ret['code'] == 1:
+                        dialog = gtk.Dialog(u"需要输入验证码", self, gtk.DIALOG_MODAL, (gtk.STOCK_OK, gtk.RESPONSE_OK, "Cancel", gtk.RESPONSE_CANCEL))
+                        dialog.set_default_response(gtk.RESPONSE_OK)
+                        dialog_label = gtk.Label(u"请打开链接然后填入验证码")
+                        url = ret['url']
+                        url = '''<a href="%s">%s</a>''' % (url, url)
+                        url_label = gtk.Label()
+                        url_label.set_markup(url)
+                        
+                        entry = gtk.Entry()
+                        dialog.vbox.add(dialog_label)
+                        dialog.vbox.add(url_label)
+                        dialog.vbox.add(entry)
+                        
+                        dialog.show_all()
+                        response = dialog.run()
+                        if response == gtk.RESPONSE_OK:
+                            captcha = entry.get_text()
+                            captcha = captcha.strip()
+                            dialog.destroy()
+                            post = ret['post']
+                            post['code'] = captcha
+                            ret = sina.login(post)
+                        else:
+                            append_info(u"取消任务")
+                            dialog.destroy()
+                            yield False
+                
+                if ret['code'] != 0:
+                    append_inf(u"登录失败")
+                    yield False
+                    
                 if del_tweets:
                     append_info(u"开始删除微博...")
                     for url in sina.del_tweets():
@@ -262,8 +327,11 @@ class CleanSinaWeiboGUI(gtk.Window):
                     yield True
                     
                 append_info(u"完成.")
-            except Exception, e:
+            except Exception as e:
+                import traceback
+                tb = traceback.format_exc()
                 append_info(u"[Error] %s" % str(e))
+                append_info(tb+"\n\n")
                 yield True
             finally:
                 self.running = False
