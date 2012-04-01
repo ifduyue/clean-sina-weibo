@@ -45,6 +45,9 @@ class Sina(object):
             data = post
         )
         
+        set_cookie = response.msg.getheaders('set-cookie')
+        self.cookies = setcookielist2cookiestring(set_cookie)
+        
         data = response.body
         captcha = re.search(r'''captcha/show.php\?cpt=(\w+)''', data)
         if captcha:
@@ -273,16 +276,26 @@ class CleanSinaWeiboGUI(gtk.Window):
                 while ret['code'] == 1:
                         dialog = gtk.Dialog(u"需要输入验证码", self, gtk.DIALOG_MODAL, (gtk.STOCK_OK, gtk.RESPONSE_OK, "Cancel", gtk.RESPONSE_CANCEL))
                         dialog.set_default_response(gtk.RESPONSE_OK)
-                        dialog_label = gtk.Label(u"请打开链接然后填入验证码")
+                        dialog_label = gtk.Label(u"请填入下图验证码, 如果没有显示图片请打开链接查看图片")
                         url = ret['url']
                         url = '''<a href="%s">%s</a>''' % (url, url)
                         url_label = gtk.Label()
                         url_label.set_markup(url)
+                        dialog.vbox.pack_start(dialog_label, False, False, 5)
+                        dialog.vbox.pack_start(url_label, False, False, 5)
+                        
+                        try:
+                            image = gtk.Image()
+                            loader=gtk.gdk.PixbufLoader()
+                            resp = fetch(ret['url'])
+                            loader.write(resp.body)
+                            loader.close()        
+                            image.set_from_pixbuf(loader.get_pixbuf())
+                            dialog.vbox.pack_start(image, False, False, 5)
+                        except: pass
                         
                         entry = gtk.Entry()
-                        dialog.vbox.add(dialog_label)
-                        dialog.vbox.add(url_label)
-                        dialog.vbox.add(entry)
+                        dialog.vbox.pack_start(entry, False, False, 5)
                         
                         dialog.show_all()
                         response = dialog.run()
