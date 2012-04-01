@@ -130,9 +130,10 @@ class Sina(object):
 class CleanSinaWeiboGUI(gtk.Window):
     def __init__(self):
         gtk.Window.__init__(self)
-        self.set_size_request(400, 480)
+        self.set_size_request(600, 480)
         self.set_title(u"新浪微博清理器")
         self.set_position(gtk.WIN_POS_CENTER)
+        self.set_resizable(True)
         self.connect(u"destroy", gtk.main_quit)
         
         self.running = False
@@ -175,6 +176,11 @@ class CleanSinaWeiboGUI(gtk.Window):
         self.buffer = gtk.TextBuffer(None)
         self.textview.set_buffer(self.buffer)
         self.textview.set_editable(False)
+        
+        # setup textview auto-scrolling
+        itr = self.buffer.get_end_iter()
+        self.buffer.create_mark("bottom", itr, False)
+        gobject.timeout_add(200, self.auto_scrolling_cb)
         
         self.vbox.pack_start(self.hbox_username, False, False, 5)
         self.vbox.pack_start(self.hbox_password, False, False, 5)
@@ -270,6 +276,13 @@ class CleanSinaWeiboGUI(gtk.Window):
         
     def toggle_button_active_cb(self, entry):
         pass
+    
+    def auto_scrolling_cb(self):
+        itr = self.buffer.get_end_iter()
+        mark = self.buffer.get_mark("bottom")
+        self.buffer.move_mark(mark, itr)
+        self.textview.scroll_mark_onscreen(mark)
+        return True
         
     def main(self):
         gtk.main()
