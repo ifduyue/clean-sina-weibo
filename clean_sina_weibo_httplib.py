@@ -55,13 +55,10 @@ class Sina(object):
         self.cookies = response.cookiestring
         print self.cookies
         response = fetch(
-            'http://weibo.cn/pub/',
-            headers = {'Cookie': self.cookies},
+            'http://weibo.cn/',
+            headers = {'Cookie': self.cookies, 'User-Agent': 'Android'},
         )
-        try:
-            self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
-        except:
-            self.uid = response.cookies['_WEIBO_UID']
+        self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
         print self.uid
         return self.cookies
     
