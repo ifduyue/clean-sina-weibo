@@ -710,7 +710,7 @@ def request(url, method="GET", data=None, headers={},
         raise UrlfetchException("Method should be one of " +
                                 ", ".join(_allowed_methods))
 
-    parsed_url = urlparse.urlparse(url)
+    parsed_url = parse_url(url)
 
     if parsed_url['scheme'] == 'https':
         h = HTTPSConnection(parsed_url['host'], port=parsed_url['port'],
