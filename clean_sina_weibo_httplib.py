@@ -12,8 +12,9 @@ class Sina(object):
         self.password = password
     
     def login(self):
-        response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php', headers={'User-Agent': 'android'})
+        response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php')
         data = response.body
+
         vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
         pname = re.search(r'''name="password_(\d+)"''', data).group(1)
         
@@ -28,7 +29,6 @@ class Sina(object):
         response = fetch(
             'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
             data = post,
-            headers = {'User-Agent': 'android'},
         )
         data = response.body
         captcha = re.search(r'''captcha/show.php\?cpt=(\w+)''', data)
@@ -51,16 +51,18 @@ class Sina(object):
             response = fetch(
                 'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
                 data = post,
-                headers = {'User-Agent': 'android'},
             )
-        set_cookie = response.msg.getheaders('set-cookie')
-        self.cookies = setcookielist2cookiestring(set_cookie)
+        self.cookies = response.cookiestring
         print self.cookies
         response = fetch(
-            'http://weibo.cn/',
-            headers = {'Cookie': self.cookies, 'User-Agent': 'android'},
+            'http://weibo.cn/pub/',
+            headers = {'Cookie': self.cookies},
         )
-        self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
+        try:
+            self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
+        except:
+            self.uid = response.cookies['_WEIBO_UID']
+        print self.uid
         return self.cookies
     
     
