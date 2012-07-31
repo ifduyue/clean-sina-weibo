@@ -5,19 +5,19 @@ import re
 from urlparse import parse_qsl, urljoin
 
 class Sina(object):
-    
+
     def __init__(self, username, password):
         self.cookies = None
         self.username = username
         self.password = password
-    
+
     def login(self):
         response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php')
         data = response.body
 
         vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
         pname = re.search(r'''name="password_(\d+)"''', data).group(1)
-        
+
         post = {
             'mobile': self.username,
             'password_'+pname: self.password,
@@ -61,8 +61,7 @@ class Sina(object):
         self.uid = re.search(r'''uid=(\d+)''', response.body).group(1)
         print self.uid
         return self.cookies
-    
-    
+
     def del_tweets(self):
         while True:
             response = fetch(
@@ -85,14 +84,14 @@ class Sina(object):
                     )
                     print url
                 except:pass
-                
+
     def unfollow(self):
         while True:
             response = fetch(
                 'http://weibo.cn/%s/follow' % self.uid,
                 headers={'Cookie': self.cookies}
             )
-            
+
             data = re.findall(r'href="/attention/del\?(.*?)"', response.body)
             if not data:
                 break
@@ -109,14 +108,14 @@ class Sina(object):
                     )
                     print url
                 except:pass
-                
+
     def remove_followers(self, black=False):
         while True:
             response = fetch(
                 'http://weibo.cn/%s/fans' % self.uid,
                 headers={'Cookie': self.cookies}
             )
-            
+
             data = re.findall(r'href="/attention/remove\?(.*?)"', response.body)
             if not data:
                 break
@@ -135,7 +134,7 @@ class Sina(object):
                     )
                     print url
                 except:pass
-                
+
 if __name__ == '__main__':
     def sigint():
         def _sigint(a,b):
