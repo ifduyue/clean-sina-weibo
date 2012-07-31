@@ -64,7 +64,7 @@ class Sina(object):
                 'http://weibo.cn/%s/profile' % self.uid,
                 headers={'Cookie': self.cookies}
             )
-            data = re.findall(r'href="/mblog/del\?(.*?)"', response.body)
+            data = re.findall(r'href="http://weibo.cn/mblog/del\?(.*?)"', response.body)
             if not data:
                 break
             for i in data:
