@@ -4,6 +4,8 @@ from urlfetch import *
 import re
 from urlparse import parse_qsl, urljoin
 
+URL_LOGIN = 'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php'
+
 class Sina(object):
 
     def __init__(self, username, password):
@@ -12,7 +14,7 @@ class Sina(object):
         self.password = password
 
     def login(self):
-        response = fetch('http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php')
+        response = fetch(URL_LOGIN)
         data = response.body
 
         vk = re.search(r'''name="vk"\s+?value="(.*?)"''', data).group(1)
@@ -26,10 +28,7 @@ class Sina(object):
             'remember': 'on',
             'submit': '1'
         }
-        response = fetch(
-            'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
-            data = post,
-        )
+        response = fetch(URL_LOGIN, data=post)
         data = response.body
         captcha = re.search(r'''captcha/show.php\?cpt=(\w+)''', data)
         if captcha:
@@ -48,10 +47,7 @@ class Sina(object):
                 'submit': '1',
                 'code': captcha.strip(),
             }
-            response = fetch(
-                'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php',
-                data = post,
-            )
+            response = fetch(URL_LOGIN, data=post)
         self.cookies = response.cookiestring
         print self.cookies
         response = fetch(
