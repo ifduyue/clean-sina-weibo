@@ -1,10 +1,13 @@
 #coding: utf8
 
-from urlfetch import *
 import re
+import time
 from urlparse import parse_qsl, urljoin
 
+from urlfetch import *
+
 URL_LOGIN = 'http://3g.sina.com.cn/prog/wapsite/sso/login_submit.php'
+TIME_SLEEP = 1 # sec
 
 class Sina(object):
 
@@ -60,6 +63,7 @@ class Sina(object):
 
     def del_tweets(self):
         while True:
+            time.sleep(2 * TIME_SLEEP)
             response = fetch(
                 'http://weibo.cn/%s/profile' % self.uid,
                 headers={'Cookie': self.cookies}
@@ -68,6 +72,7 @@ class Sina(object):
             if not data:
                 break
             for i in data:
+                time.sleep(TIME_SLEEP)
                 j = parse_qsl(i)
                 qs = dict(j)
                 qs['act'] = 'delc'
@@ -83,6 +88,7 @@ class Sina(object):
 
     def unfollow(self):
         while True:
+            time.sleep(2 * TIME_SLEEP)
             response = fetch(
                 'http://weibo.cn/%s/follow' % self.uid,
                 headers={'Cookie': self.cookies}
@@ -92,6 +98,7 @@ class Sina(object):
             if not data:
                 break
             for i in data:
+                time.sleep(TIME_SLEEP)
                 j = parse_qsl(i)
                 qs = dict(j)
                 qs['act'] = 'delc'
@@ -107,6 +114,7 @@ class Sina(object):
 
     def remove_followers(self, black=False):
         while True:
+            time.sleep(2 * TIME_SLEEP)
             response = fetch(
                 'http://weibo.cn/%s/fans' % self.uid,
                 headers={'Cookie': self.cookies}
@@ -116,6 +124,7 @@ class Sina(object):
             if not data:
                 break
             for i in data:
+                time.sleep(TIME_SLEEP)
                 j = parse_qsl(i)
                 qs = dict(j)
                 qs['act'] = 'removec'
